@@ -55,6 +55,7 @@ $_msg_help           = 'テキスト整形のルールを表示する';
 $_msg_week           = array('日','月','火','水','木','金','土');
 $_msg_content_back_to_top = '<div class="jumpmenu"><a href="#navigator">&uarr;</a></div>';
 $_msg_word           = 'これらのキーワードがハイライトされています：';
+$_msg_format         = 'Wiki 記法';
 
 ///////////////////////////////////////
 // Symbols

@@ -434,7 +434,7 @@ function catrule()
 		return '<p>Sorry, page \'' . htmlspecialchars($rule_page) .
 			'\' unavailable.</p>';
 	} else {
-		return convert_html(get_source($rule_page));
+		return convert_html_for_page($page);
 	}
 }
 

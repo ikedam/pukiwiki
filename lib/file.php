@@ -56,7 +56,11 @@ function get_filetime($page)
 // Get physical file name of the page
 function get_filename($page)
 {
-	return DATA_DIR . encode($page) . '.txt';
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getOrCreateInstanceByTitle($page);
+	}
+	return DATA_DIR . $page->getFilename();
 }
 
 // Put a data(wiki text) into a physical file(diff, backup, text)
@@ -66,6 +70,11 @@ function page_write($page, $postdata, $notimestamp = FALSE)
 
 	if (PKWK_READONLY) return; // Do nothing
 
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getOrCreateInstanceByTitle($page);
+	}
+	
 	$postdata = make_str_rules($postdata);
 
 	// Create and write diff
@@ -84,10 +93,10 @@ function page_write($page, $postdata, $notimestamp = FALSE)
 		$_diff = explode("\n", $diffdata);
 		$plus  = join("\n", preg_replace('/^\+/', '', preg_grep('/^\+/', $_diff)));
 		$minus = join("\n", preg_replace('/^-/',  '', preg_grep('/^-/',  $_diff)));
-		tb_send($page, $plus, $minus);
+		tb_send($page->getTitle(), $plus, $minus);
 	}
 
-	links_update($page);
+	links_update($page->getTitle());
 }
 
 // Modify original text with user-defined / system-defined rules
@@ -190,8 +199,12 @@ function file_write($dir, $page, $str, $notimestamp = FALSE)
 	if (PKWK_READONLY) return; // Do nothing
 	if ($dir != DATA_DIR && $dir != DIFF_DIR) die('file_write(): Invalid directory');
 
-	$page = strip_bracket($page);
-	$file = $dir . encode($page) . '.txt';
+	if(!is_a($page, 'Page'))
+	{
+		$page = strip_bracket($page);
+		$page = Page::getOrCreateInstanceByTitle($page);
+	}
+	$file = $dir . $page->getFilename();
 	$file_exists = file_exists($file);
 
 	// ----
@@ -202,13 +215,13 @@ function file_write($dir, $page, $str, $notimestamp = FALSE)
 		if (! $file_exists) return; // Ignore null posting for DATA_DIR
 
 		// Update RecentDeleted (Add the $page)
-		add_recent($page, $whatsdeleted, '', $maxshow_deleted);
+		add_recent($page->getTitle(), $whatsdeleted, '', $maxshow_deleted);
 
 		// Remove the page
 		unlink($file);
 
 		// Update RecentDeleted, and remove the page from RecentChanges
-		lastmodified_add($whatsdeleted, $page);
+		lastmodified_add($whatsdeleted, $page->getTitle());
 
 		// Clear is_page() cache
 		is_page($page, TRUE);
@@ -222,15 +235,15 @@ function file_write($dir, $page, $str, $notimestamp = FALSE)
 	// ----
 	// File replacement (Edit)
 
-	if (! is_pagename($page))
-		die_message(str_replace('$1', htmlspecialchars($page),
+	if (! is_pagename($page->getTitle()))
+		die_message(str_replace('$1', htmlspecialchars($page->getTitle()),
 		            str_replace('$2', 'WikiName', $_msg_invalidiwn)));
 
 	$str = rtrim(preg_replace('/' . "\r" . '/', '', $str)) . "\n";
 	$timestamp = ($file_exists && $notimestamp) ? filemtime($file) : FALSE;
 
 	$fp = fopen($file, 'a') or die('fopen() failed: ' .
-		htmlspecialchars(basename($dir) . '/' . encode($page) . '.txt') .	
+		htmlspecialchars(basename($dir) . '/' . $page->getFilename()) .	
 		'<br />' . "\n" .
 		'Maybe permission is not writable or filename is too long');
 	set_file_buffer($fp, 0);
@@ -246,7 +259,7 @@ function file_write($dir, $page, $str, $notimestamp = FALSE)
 	// Optional actions
 	if ($dir == DATA_DIR) {
 		// Update RecentChanges (Add or renew the $page)
-		if ($timestamp === FALSE) lastmodified_add($page);
+		if ($timestamp === FALSE) lastmodified_add($page->getTitle());
 
 		// Command execution per update
 		if (defined('PKWK_UPDATE_EXEC') && PKWK_UPDATE_EXEC)
@@ -255,8 +268,8 @@ function file_write($dir, $page, $str, $notimestamp = FALSE)
 	} else if ($dir == DIFF_DIR && $notify) {
 		if ($notify_diff_only) $str = preg_replace('/^[^-+].*\n/m', '', $str);
 		$footer['ACTION'] = 'Page update';
-		$footer['PAGE']   = & $page;
-		$footer['URI']    = get_script_uri() . '?' . rawurlencode($page);
+		$footer['PAGE']   = $page->getTitle();
+		$footer['URI']    = get_script_uri() . '?' . rawurlencode($page->getTitle());
 		$footer['USER_AGENT']  = TRUE;
 		$footer['REMOTE_ADDR'] = TRUE;
 		pkwk_mail_notify($notify_subject, $str, $footer) or
@@ -501,13 +514,27 @@ function header_lastmod($page = NULL)
 	}
 }
 
+
+function _convert_extension_to_pattern($value)
+{
+	return "\\." . preg_quote($value, '/');
+}
+
 // Get a page list of this wiki
-function get_existpages($dir = DATA_DIR, $ext = '.txt')
+function get_existpages($dir = DATA_DIR, $ext=NULL)
 {
 	$aryret = array();
 
 	$pattern = '((?:[0-9A-F]{2})+)';
-	if ($ext != '') $ext = preg_quote($ext, '/');
+	if (is_null($ext))
+	{
+		$ret = Page::getExtensions();
+		$ext = '(?:' . implode('|', array_map("_convert_extension_to_pattern", $ret)) . ')';
+	}
+	else
+	{
+		if ($ext != '') $ext = preg_quote($ext, '/');
+	}
 	$pattern = '/^' . $pattern . $ext . '$/';
 
 	$dp = @opendir($dir) or

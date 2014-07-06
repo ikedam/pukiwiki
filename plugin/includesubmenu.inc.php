@@ -44,7 +44,7 @@ function plugin_includesubmenu_convert()
     return "";
   }
 
-  $body = convert_html(get_source($SubMenuPageName));
+  $body = convert_html_for_page($SubMenuPageName);
 
   if ($ShowPageName) {
     $r_page = rawurlencode($SubMenuPageName);

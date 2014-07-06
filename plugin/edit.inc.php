@@ -27,10 +27,23 @@ function plugin_edit_action()
 		return plugin_edit_cancel();
 	}
 
-	$postdata = @join('', get_source($page));
-	if ($postdata == '') $postdata = auto_template($page);
+	$format = null;
+	$pageInfo = Page::getInstanceByTitle($page);
+	if(!is_null($pageInfo))
+	{
+		// existing page
+		$format = $pageInfo->getFormat();
+		$postdata = @join('', get_source($page));
+		if ($postdata == '') $postdata = auto_template($page);
+	}
+	else
+	{
+		// new page
+		$pageInfo = new Page($page, NULL, FALSE);
+		$postdata = auto_template($page);
+	}
 
-	return array('msg'=>$_title_edit, 'body'=>edit_form($page, $postdata));
+	return array('msg'=>$_title_edit, 'body'=>edit_form($pageInfo, $postdata));
 }
 
 // Preview
@@ -40,6 +53,11 @@ function plugin_edit_preview()
 	global $_title_preview, $_msg_preview, $_msg_preview_delete;
 
 	$page = isset($vars['page']) ? $vars['page'] : '';
+
+	$format = isset($vars['format']) ? $vars['format'] : NULL;
+
+	$page = new Page($page, $format);
+	$page->checkPersist();
 
 	// Loading template
 	if (isset($vars['template_page']) && is_page($vars['template_page'])) {
@@ -69,7 +87,7 @@ function plugin_edit_preview()
 	if ($postdata) {
 		$postdata = make_str_rules($postdata);
 		$postdata = explode("\n", $postdata);
-		$postdata = drop_submit(convert_html($postdata));
+		$postdata = drop_submit(convert_html($postdata, $format));
 		$body .= '<div id="preview">' . $postdata . '</div>' . "\n";
 	}
 	$body .= edit_form($page, $vars['msg'], $vars['digest'], FALSE);
@@ -179,6 +197,7 @@ function plugin_edit_write()
 	global $notimeupdate, $_msg_invalidpass, $do_update_diff_table;
 
 	$page   = isset($vars['page'])   ? $vars['page']   : '';
+	$format = isset($vars['format']) ? $vars['format'] : NULL;
 	$add    = isset($vars['add'])    ? $vars['add']    : '';
 	$digest = isset($vars['digest']) ? $vars['digest'] : '';
 
@@ -186,6 +205,8 @@ function plugin_edit_write()
 	$msg = & $vars['msg']; // Reference
 
 	$retvars = array();
+	
+	$page = new Page($page, $format);
 
 	// Collision Detection
 	$oldpagesrc = join('', get_source($page));
@@ -220,9 +241,9 @@ function plugin_edit_write()
 	if ($postdata == '') {
 		page_write($page, $postdata);
 		$retvars['msg' ] = $_title_deleted;
-		$retvars['body'] = str_replace('$1', htmlspecialchars($page), $_title_deleted);
+		$retvars['body'] = str_replace('$1', htmlspecialchars($page->getTitle()), $_title_deleted);
 
-		if ($trackback) tb_delete($page);
+		if ($trackback) tb_delete($page->getTitle());
 
 		return $retvars;
 	}
@@ -238,7 +259,7 @@ function plugin_edit_write()
 
 	page_write($page, $postdata, $notimeupdate != 0 && $notimestamp);
 	pkwk_headers_sent();
-	header('Location: ' . get_script_uri() . '?' . rawurlencode($page));
+	header('Location: ' . get_script_uri() . '?' . rawurlencode($page->getTitle()));
 	exit;
 }
 

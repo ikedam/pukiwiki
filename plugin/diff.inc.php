@@ -29,8 +29,13 @@ function plugin_diff_view($page)
 	global $_msg_notfound, $_msg_goto, $_msg_deleted, $_msg_addline, $_msg_delline, $_title_diff;
 	global $_title_diff_delete;
 
-	$r_page = rawurlencode($page);
-	$s_page = htmlspecialchars($page);
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getInstanceByTitle($page);
+	}
+	
+	$r_page = rawurlencode($page->getTitle());
+	$s_page = htmlspecialchars($page->getTitle());
 
 	$menu = array(
 		'<li>' . $_msg_addline . '</li>',
@@ -45,7 +50,7 @@ function plugin_diff_view($page)
 		$menu[] = ' <li>' . str_replace('$1', $s_page, $_msg_deleted) . '</li>';
 	}
 
-	$filename = DIFF_DIR . encode($page) . '.txt';
+	$filename = DIFF_DIR . $page->getFilename();
 	if (file_exists($filename)) {
 		if (! PKWK_READONLY) {
 			$menu[] = '<li><a href="' . $script . '?cmd=diff&amp;action=delete&amp;page=' .
@@ -76,10 +81,15 @@ function plugin_diff_delete($page)
 	global $_title_diff_delete, $_msg_diff_deleted;
 	global $_msg_diff_adminpass, $_btn_delete, $_msg_invalidpass;
 
-	$filename = DIFF_DIR . encode($page) . '.txt';
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getInstanceByTitle($page);
+	}
+	
+	$filename = DIFF_DIR . $page->getFilename();
 	$body = '';
-	if (! is_pagename($page))     $body = 'Invalid page name';
-	if (! file_exists($filename)) $body = make_pagelink($page) . '\'s diff seems not found';
+	if (! is_pagename($page->getTitle()))     $body = 'Invalid page name';
+	if (! file_exists($filename)) $body = make_pagelink($page->getTitle()) . '\'s diff seems not found';
 	if ($body) return array('msg'=>$_title_diff_delete, 'body'=>$body);
 
 	if (isset($vars['pass'])) {
@@ -87,14 +97,14 @@ function plugin_diff_delete($page)
 			unlink($filename);
 			return array(
 				'msg'  => $_title_diff_delete,
-				'body' => str_replace('$1', make_pagelink($page), $_msg_diff_deleted)
+				'body' => str_replace('$1', make_pagelink($page->getTitle()), $_msg_diff_deleted)
 			);
 		} else {
 			$body .= '<p><strong>' . $_msg_invalidpass . '</strong></p>' . "\n";
 		}
 	}
 
-	$s_page = htmlspecialchars($page);
+	$s_page = htmlspecialchars($page->getTitle());
 	$body .= <<<EOD
 <p>$_msg_diff_adminpass</p>
 <form action="$script" method="post">

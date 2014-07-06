@@ -98,7 +98,7 @@ function plugin_include_convert()
 	// Include A page, that probably includes another pages
 	$get['page'] = $post['page'] = $vars['page'] = $page;
 	if (check_readable($page, false, false)) {
-		$body = convert_html(get_source($page));
+		$body = convert_html_for_page($page);
 	} else {
 		$body = str_replace('$1', $page, $_msg_include_restrict);
 	}

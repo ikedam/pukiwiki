@@ -9,8 +9,21 @@
 // function 'convert_html()', wiki text parser
 // and related classes-and-functions
 
-function convert_html($lines)
+function convert_html_for_page($page)
 {
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getInstanceByTitle($page);
+	}
+	return convert_html(get_source($page), $page->getFormat());
+}
+
+function convert_html($lines, $format=NULL)
+{
+	if(is_null($format))
+	{
+		$format = Page::getDefaultFormat();
+	}
 	global $vars, $digest;
 	static $contents_id = 0;
 

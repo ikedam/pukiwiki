@@ -36,6 +36,7 @@ if (! defined('DATA_HOME')) define('DATA_HOME', '');
 if (! defined('LIB_DIR')) define('LIB_DIR', '');
 
 require(LIB_DIR . 'func.php');
+require(LIB_DIR . 'page.php');
 require(LIB_DIR . 'file.php');
 require(LIB_DIR . 'plugin.php');
 require(LIB_DIR . 'html.php');
@@ -120,7 +121,7 @@ if (isset($retvars['body']) && $retvars['body'] != '') {
 	$vars['cmd']  = 'read';
 	$vars['page'] = & $base;
 
-	$body  = convert_html(get_source($base));
+	$body  = convert_html_for_page($base);
 
 	if ($trackback) $body .= tb_get_rdf($base); // Add TrackBack-Ping URI
 	if ($referer) ref_save($base);

@@ -164,8 +164,19 @@ function edit_form($page, $postdata, $digest = FALSE, $b_template = TRUE)
 {
 	global $script, $vars, $rows, $cols, $hr, $function_freeze;
 	global $_btn_preview, $_btn_repreview, $_btn_update, $_btn_cancel, $_msg_help;
+	global $_msg_format;
 	global $whatsnew, $_btn_template, $_btn_load, $load_template_func;
 	global $notimeupdate;
+
+	if(!is_a($page, 'Page'))
+	{
+		$pageInfo = Page::getInstanceByTitle($page);
+		if(is_null($pageInfo))
+		{
+			$pageInfo = new Page($page, NULL, FALSE);
+		}
+		$page = $pageInfo;
+	}
 
 	// Newly generate $digest or not
 	if ($digest === FALSE) $digest = md5(join('', get_source($page)));
@@ -209,8 +220,8 @@ EOD;
 			$refer = '[[' . strip_bracket($vars['refer']) . ']]' . "\n\n";
 	}
 
-	$r_page      = rawurlencode($page);
-	$s_page      = htmlspecialchars($page);
+	$r_page      = rawurlencode($page->getTitle());
+	$s_page      = htmlspecialchars($page->getTitle());
 	$s_digest    = htmlspecialchars($digest);
 	$s_postdata  = htmlspecialchars($refer . $postdata);
 	$s_original  = isset($vars['original']) ? htmlspecialchars($vars['original']) : $s_postdata;
@@ -235,6 +246,32 @@ EOD;
 			'&nbsp;';
 	}
 
+	$formatSelection = "";
+	if($page->isPersist())
+	{
+		$formatSelection .= '<input type="hidden" name="format" value="' . htmlspecialchars($page->getFormat()) . '" />';
+		$formatSelection .= $_msg_format . ': ' . $page->getFormatName() . '<br />' . "\n";
+	}
+	else
+	{
+		$formats = array(
+			array("value" => "markdown", "name" => "Markdown", ),
+			array("value" => "pukiwiki", "name" => "PukiWiki", ),
+		);
+		$formatSelection .= $_msg_format . ': <select name="format">';
+		
+		foreach($formats as $format)
+		{
+			$value = $format["value"];
+			$name = $format["name"];
+			$selected = ($format["value"] == $page->getFormat())?'selected="selected"':'';
+			$formatSelection .= '<option value="' . $value . '" ' . $selected . '>' . $name . '</option>';
+		}
+		
+		$formatSelection .= '</select><br />' . "\n";
+	}
+	
+	
 	// 'margin-bottom', 'float:left', and 'margin-top'
 	// are for layout of 'cancel button'
 	$body = <<<EOD
@@ -245,6 +282,7 @@ $template
   <input type="hidden" name="cmd"    value="edit" />
   <input type="hidden" name="page"   value="$s_page" />
   <input type="hidden" name="digest" value="$s_digest" />
+$formatSelection
   <textarea name="msg" rows="$rows" cols="$cols">$s_postdata</textarea>
   <br />
   <div style="float:left;">

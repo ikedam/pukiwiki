@@ -43,6 +43,11 @@ function make_backup($page, $delete = FALSE)
 
 	if (! is_page($page)) return;
 
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getInstanceByTitle($page);
+	}
+	
 	$lastmod = _backup_get_filetime($page);
 	if ($lastmod == 0 || UTIME - $lastmod > 60 * 60 * $cycle)
 	{
@@ -126,7 +131,12 @@ function get_backup($page, $age = 0)
  */
 function _backup_get_filename($page)
 {
-	return BACKUP_DIR . encode($page) . BACKUP_EXT;
+	if(!is_a($page, 'Page'))
+	{
+		$page = Page::getOrCreateInstanceByTitle($page);
+	}
+	
+	return BACKUP_DIR . $page->getFilename() . BACKUP_EXT;
 }
 
 /**
@@ -244,7 +254,7 @@ if (extension_loaded('zlib')) {
 else
 {
 	// ファイルシステム関数
-	define('BACKUP_EXT', '.txt');
+	define('BACKUP_EXT', '');
 
 /**
  * _backup_fopen

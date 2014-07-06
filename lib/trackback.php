@@ -104,7 +104,7 @@ function tb_send($page, $plus, $minus = '')
 	if (! is_array($links) || empty($links)) return;
 
 	$r_page  = rawurlencode($page);
-	$excerpt = strip_htmltag(convert_html(get_source($page)));
+	$excerpt = strip_htmltag(convert_html_for_page($page));
 
 	// Sender's information
 	$putdata = array(

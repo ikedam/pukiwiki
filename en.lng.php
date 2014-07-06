@@ -53,6 +53,7 @@ $_msg_help        = 'View Text Formatting Rules';
 $_msg_week        = array('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
 $_msg_content_back_to_top = '<div class="jumpmenu"><a href="#navigator">&uarr;</a></div>';
 $_msg_word        = 'These search terms have been highlighted:';
+$_msg_format      = 'Wiki Formatting';
 
 ///////////////////////////////////////
 // Symbols
