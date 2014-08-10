@@ -32,11 +32,28 @@ function convert_html($lines, $format=NULL)
 
 	if (! is_array($lines)) $lines = explode("\n", $lines);
 
+	if($format == "markdown")
+	{
+		return convert_markdown_to_html($lines);
+	}
+
 	$body = & new Body(++$contents_id);
 	$body->parse($lines);
 
 	return $body->toString();
 }
+
+function convert_markdown_to_html($lines)
+{
+	include_once('Parsedown.php');
+	
+	$parser = new Parsedown();
+	$lines = array_map("rtrim", $lines);
+	$content = $parser->parse(implode("\n", $lines));
+	
+	return $content;
+}
+
 
 // Block elements
 class Element
@@ -112,7 +129,8 @@ function & Factory_Inline($text)
 	if (substr($text, 0, 1) == '~') {
 		return new Paragraph(' ' . substr($text, 1));
 	} else {
-		return new Inline($text);
+		$ret = new Inline($text);
+		return $ret;
 	}
 }
 
@@ -155,7 +173,8 @@ function & Factory_Div(& $root, $text)
 		// Usual code
 		if (preg_match('/^\#([^\(]+)(?:\((.*)\))?/', $text, $matches) &&
 		    exist_plugin_convert($matches[1])) {
-			return new Div($matches);
+			$ret = new Div($matches);
+			return $ret;
 		}
 	} else {
 		// Hack code
