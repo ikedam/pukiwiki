@@ -75,7 +75,10 @@ function page_write($page, $postdata, $notimestamp = FALSE)
 		$page = Page::getOrCreateInstanceByTitle($page);
 	}
 	
-	$postdata = make_str_rules($postdata);
+	if($page->getFormat() == 'pukiwiki')
+	{
+		$postdata = make_str_rules($postdata);
+	}
 
 	// Create and write diff
 	$oldpostdata = is_page($page) ? join('', get_source($page)) : '';
