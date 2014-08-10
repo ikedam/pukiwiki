@@ -50,10 +50,14 @@ function plugin_menu_convert()
 		} else if ($vars['page'] == $page) {
 			return '<!-- #menu(): You already view ' . htmlspecialchars($page) . ' -->';
 		} else {
+			if(!is_a($page, 'Page'))
+			{
+				$page = Page::getInstanceByTitle($page);
+			}
 			// Cut fixed anchors
 			$menutext = preg_replace('/^(\*{1,3}.*)\[#[A-Za-z][\w-]+\](.*)$/m', '$1$2', get_source($page));
 
-			return preg_replace('/<ul[^>]*>/', '<ul>', convert_html($menutext));  
+			return preg_replace('/<ul[^>]*>/', '<ul>', convert_html($menutext, $page->getFormat()));  
 		}
 	}
 }
